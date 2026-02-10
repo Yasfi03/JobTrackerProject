@@ -1,0 +1,8 @@
+{
+    "name": "job-tracker",
+    "compatibility_date": "2026-02-08",
+    "assets": {
+      "directory": "./dist"
+    }
+  }
+  
