@@ -1,112 +1,105 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { dummyJobs } from '../data/dummyData';
+import { jobsAPI } from '../services/api';
 
 export default function ManageJobs() {
-  const [jobs] = useState(dummyJobs.slice(0, 2));
-  const [selectedJob, setSelectedJob] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockApplicants = [
-    { id: 1, name: 'Sarah Johnson', email: 'sarah@email.com', status: 'Under Review', matchScore: 85 },
-    { id: 2, name: 'Mike Chen', email: 'mike@email.com', status: 'Interview', matchScore: 78 },
-    { id: 3, name: 'Emily Davis', email: 'emily@email.com', status: 'Applied', matchScore: 92 }
-  ];
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  const loadJobs = async () => {
+    try {
+      const response = await jobsAPI.getMyJobs();
+      setJobs(response.data);
+    } catch (error) {
+      console.error('Error loading jobs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job?')) return;
+
+    try {
+      await jobsAPI.delete(jobId);
+      setJobs(jobs.filter(j => j.id !== jobId));
+      alert('Job deleted successfully');
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Failed to delete job');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+        <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Manage Jobs</h1>
-          <p className="text-gray-600 mt-1">
-            Review applications and manage your job postings
-          </p>
+          <Link 
+            to="/company/post-job"
+            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+          >
+            Post New Job
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-4 border-b">
-                <h2 className="font-semibold text-gray-900">Your Jobs</h2>
-              </div>
-              <div className="divide-y">
-                {jobs.map(job => (
-                  <button
-                    key={job.id}
-                    onClick={() => setSelectedJob(job)}
-                    className={`w-full text-left p-4 hover:bg-gray-50 transition ${
-                      selectedJob?.id === job.id ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="font-medium text-gray-900">{job.title}</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      {job.applicants} applicants
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-500 mt-4">Loading jobs...</p>
           </div>
-
-          <div className="lg:col-span-2">
-            {selectedJob ? (
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {selectedJob.title}
-                  </h2>
-                  <p className="text-gray-600 mt-1">{selectedJob.applicants} applicants</p>
-                </div>
-                
-                <div className="p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Applicants</h3>
-                  <div className="space-y-4">
-                    {mockApplicants.map(applicant => (
-                      <div key={applicant.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium text-gray-900">{applicant.name}</div>
-                            <div className="text-sm text-gray-600">{applicant.email}</div>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            applicant.status === 'Interview' ? 'bg-green-100 text-green-800' :
-                            applicant.status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {applicant.status}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex items-center justify-between">
-                          <div className="text-sm">
-                            <span className="text-gray-600">Match Score: </span>
-                            <span className="font-semibold text-green-600">
-                              {applicant.matchScore}%
-                            </span>
-                          </div>
-                          <div className="space-x-2">
-                            <button className="text-blue-600 hover:underline text-sm">
-                              View Resume
-                            </button>
-                            <button className="text-green-600 hover:underline text-sm">
-                              Schedule Interview
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+        ) : (
+          <div className="space-y-4">
+            {jobs.map(job => (
+              <div key={job.id} className="bg-white rounded-lg shadow p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-gray-900">{job.title}</h3>
+                    <p className="text-gray-600 mt-1">{job.location} • {job.jobType}</p>
+                    <p className="text-sm text-gray-500 mt-2 line-clamp-2">{job.description}</p>
+                  </div>
+                  <div className="ml-4 flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-blue-600">{job.applicantsCount || 0}</p>
+                      <p className="text-xs text-gray-500">Applicants</p>
+                    </div>
+                    <button
+  onClick={() => navigate(`/company/jobs/${job.id}`)}
+  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+>
+  View Applications
+</button>
+                    <button
+                      onClick={() => handleDelete(job.id)}
+                      className="text-red-600 hover:text-red-700 px-3 py-1 border border-red-300 rounded-md text-sm"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <div className="text-gray-500">
-                  Select a job to view applicants
-                </div>
-              </div>
-            )}
+            ))}
           </div>
-        </div>
+        )}
+
+        {!loading && jobs.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">You haven't posted any jobs yet.</p>
+            <Link 
+              to="/company/post-job"
+              className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+            >
+              Post Your First Job
+            </Link>
+          </div>
+        )}
       </main>
     </div>
   );

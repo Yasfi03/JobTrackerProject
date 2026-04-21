@@ -28,17 +28,28 @@ export default function Login() {
       const response = await authAPI.login(formData);
       const user = response.data;
       
+      // Save authentication data
       saveAuth(user);
       
-      if (user.role === 'APPLICANT') {
-        navigate('/dashboard');
-      } else if (user.role === 'COMPANY') {
-        navigate('/dashboard');
+      // Redirect based on role
+      if (user.role === 'COMPANY') {
+        navigate('/company/dashboard');
       } else {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError('Invalid email or password. Try: applicant@test.com / password');
+      console.error('Login error:', err);
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.status === 401) {
+        setError('Invalid email or password');
+      } else if (err.code === 'ECONNABORTED') {
+        setError('Server is waking up (Render free tier). Please wait 60 seconds and try again.');
+      } else if (err.message.includes('Network Error')) {
+        setError('Cannot connect to server. Please check your internet connection.');
+      } else {
+        setError('Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -58,15 +69,6 @@ export default function Login() {
               {error}
             </div>
           )}
-
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm font-medium text-blue-900 mb-2">Test Accounts:</p>
-            <div className="text-xs text-blue-800 space-y-1">
-              <p>Applicant: applicant@test.com / password</p>
-              <p>Company: company@test.com / password</p>
-              <p>Admin: admin@test.com / password</p>
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

@@ -3,36 +3,38 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
 import ApplicationCard from '../components/ApplicationCard';
-import { applicationAPI } from '../services/api';
+import { applicationsAPI, statsAPI } from '../services/api';
 import { getUser } from '../utils/auth';
 
 export default function ApplicantDashboard() {
   const user = getUser();
   const [applications, setApplications] = useState([]);
+  const [stats, setStats] = useState({
+    totalApplications: 0,
+    pendingApplications: 0,
+    interviewsScheduled: 0,
+    responseRate: 0,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadApplications();
+    loadData();
   }, []);
 
-  const loadApplications = async () => {
+  const loadData = async () => {
     try {
-      const response = await applicationAPI.getMyApplications();
-      setApplications(response.data);
+      const [appsResponse, statsResponse] = await Promise.all([
+        applicationsAPI.getMyApplications(),
+        statsAPI.getApplicantStats(),
+      ]);
+      
+      setApplications(appsResponse.data);
+      setStats(statsResponse.data);
     } catch (error) {
-      console.error('Error loading applications:', error);
+      console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const stats = {
-    total: applications.length,
-    interview: applications.filter(a => a.status === 'Interview').length,
-    underReview: applications.filter(a => a.status === 'Under Review').length,
-    responseRate: applications.length > 0 
-      ? Math.round((applications.filter(a => a.status !== 'Applied').length / applications.length) * 100)
-      : 0
   };
 
   return (
@@ -50,18 +52,18 @@ export default function ApplicantDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard 
             title="Total Applications" 
-            value={stats.total} 
+            value={stats.totalApplications} 
             color="blue"
           />
           <StatCard 
-            title="Interviews" 
-            value={stats.interview} 
-            color="green"
+            title="Pending Review" 
+            value={stats.pendingApplications} 
+            color="orange"
           />
           <StatCard 
-            title="Under Review" 
-            value={stats.underReview} 
-            color="orange"
+            title="Interviews" 
+            value={stats.interviewsScheduled} 
+            color="green"
           />
           <StatCard 
             title="Response Rate" 
@@ -85,7 +87,8 @@ export default function ApplicantDashboard() {
 
           {loading ? (
             <div className="text-center py-12">
-              <div className="text-gray-500">Loading applications...</div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-500 mt-4">Loading applications...</p>
             </div>
           ) : applications.length > 0 ? (
             <div className="space-y-4">
@@ -111,26 +114,32 @@ export default function ApplicantDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              AI Resume Analyzer
+              🤖 AI Resume Analyzer
             </h3>
             <p className="text-gray-600 text-sm mb-4">
               Get instant feedback on your resume and improve your chances of getting hired.
             </p>
-            <button className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
-              Analyze Resume (Coming Soon)
-            </button>
+            <Link 
+              to="/ai-resume"
+              className="inline-block bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700"
+            >
+              Analyze Resume
+            </Link>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Interview Prep Chatbot
+              💬 Interview Prep Chatbot
             </h3>
             <p className="text-gray-600 text-sm mb-4">
               Practice interviews with our AI chatbot and get personalized feedback.
             </p>
-            <button className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-700">
-              Start Practice (Coming Soon)
-            </button>
+            <Link 
+              to="/ai-chat"
+              className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-700"
+            >
+              Start Practice
+            </Link>
           </div>
         </div>
       </main>

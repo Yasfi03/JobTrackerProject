@@ -1,40 +1,40 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { jobAPI } from '../services/api';
+import { jobsAPI } from '../services/api';
 
 export default function PostJob() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
-    location: '',
-    salary: '',
-    type: 'Full-time',
     description: '',
     requirements: '',
-    deadline: ''
+    location: '',
+    salary: '',
+    jobType: 'FULL_TIME',
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
-      await jobAPI.create(formData);
+      await jobsAPI.create(formData);
       alert('Job posted successfully!');
-      navigate('/manage-jobs');
+      navigate('/company/jobs');
     } catch (error) {
       console.error('Error posting job:', error);
-      alert('Job posted successfully!');
-      navigate('/manage-jobs');
+      setError(error.response?.data?.message || 'Failed to post job');
     } finally {
       setLoading(false);
     }
@@ -45,139 +45,124 @@ export default function PostJob() {
       <Navbar />
       
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Post a New Job</h1>
-          <p className="text-gray-600 mt-1">
-            Fill in the details to attract the right candidates
-          </p>
-        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Post a New Job</h1>
 
         <div className="bg-white rounded-lg shadow p-8">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Job Title *
               </label>
               <input
                 type="text"
                 name="title"
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="e.g. Senior Frontend Developer"
+                placeholder="e.g. Senior Software Engineer"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Description *
+              </label>
+              <textarea
+                name="description"
+                required
+                rows={5}
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Requirements *
+              </label>
+              <textarea
+                name="requirements"
+                required
+                rows={5}
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.requirements}
+                onChange={handleChange}
+                placeholder="List required skills, experience, and qualifications..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Location *
                 </label>
                 <input
                   type="text"
                   name="location"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="e.g. London, UK or Remote"
+                  placeholder="e.g. San Francisco, CA"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Job Type *
-                </label>
-                <select
-                  name="type"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.type}
-                  onChange={handleChange}
-                >
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Internship">Internship</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Salary Range *
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Salary Range
                 </label>
                 <input
                   type="text"
                   name="salary"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.salary}
                   onChange={handleChange}
-                  placeholder="e.g. £40,000 - £55,000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Application Deadline *
-                </label>
-                <input
-                  type="date"
-                  name="deadline"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.deadline}
-                  onChange={handleChange}
+                  placeholder="e.g. $120k - $150k"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Job Description *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Job Type *
               </label>
-              <textarea
-                name="description"
+              <select
+                name="jobType"
                 required
-                rows={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.description}
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.jobType}
                 onChange={handleChange}
-                placeholder="Describe the role, responsibilities, and what makes your company great..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Requirements *
-              </label>
-              <textarea
-                name="requirements"
-                required
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.requirements}
-                onChange={handleChange}
-                placeholder="List required skills, experience, qualifications..."
-              />
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                Cancel
-              </button>
+                <option value="FULL_TIME">Full-time</option>
+                <option value="PART_TIME">Part-time</option>
+                <option value="CONTRACT">Contract</option>
+                <option value="INTERNSHIP">Internship</option>
+              </select>
+            </div>
+
+            <div className="flex gap-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition"
               >
                 {loading ? 'Posting...' : 'Post Job'}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/company/dashboard')}
+                className="px-6 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition"
+              >
+                Cancel
               </button>
             </div>
           </form>
